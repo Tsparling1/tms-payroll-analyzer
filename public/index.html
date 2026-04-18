@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payroll Cost Analyzer — TMS Solutions Group</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #FAFAF7;
+      --gold: #B8860B;
+      --gold-muted: #9A7209;
+      --gold-dim: rgba(184,134,11,0.08);
+      --gold-border: rgba(184,134,11,0.22);
+      --dark: #1C1C1E;
+      --gray: #6B7280;
+      --gray-light: #4B5563;
+      --border: #E8E5DC;
+      --white: #FFFFFF;
+      --radius: 14px;
+      --radius-sm: 8px;
+      --green: #15803D;
+      --green-dim: rgba(21,128,61,0.08);
+      --green-border: rgba(21,128,61,0.28);
+      --shadow: 0 4px 24px rgba(0,0,0,0.07);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--dark);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    #app { min-height: 100vh; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up { animation: fadeUp 0.45s ease both; }
+
+    /* ===== SHARED ===== */
+    .tms-logo { text-align: center; margin-bottom: 8px; }
+    .tms-letters {
+      display: block; font-size: 17px; font-weight: 900;
+      color: var(--gold); letter-spacing: 7px; line-height: 1;
+    }
+    .tms-sub {
+      display: block; font-size: 9px; letter-spacing: 4px;
+      text-transform: uppercase; color: var(--gray); margin-top: 4px;
+    }
+
+    .pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+      color: var(--gold); font-weight: 700;
+      background: var(--gold-dim); border: 1px solid var(--gold-border);
+      padding: 5px 14px; border-radius: 20px; margin-bottom: 14px;
+    }
+
+    .btn-gold {
+      display: inline-block; width: 100%;
+      background: var(--gold); color: #fff;
+      font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 700;
+      border: none; border-radius: 10px; padding: 15px 28px;
+      cursor: pointer; letter-spacing: 0.3px; transition: background 0.18s;
+    }
+    .btn-gold:hover { background: var(--gold-muted); }
+
+    .divider {
+      width: 44px; height: 2px; margin: 0 auto 18px;
+      background: linear-gradient(to right, rgba(184,134,11,0.25), var(--gold), rgba(184,134,11,0.25));
+      border-radius: 2px;
+    }
+
+    /* ===== LANDING ===== */
+    #landing {
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 60px 24px 80px; text-align: center;
+      position: relative; overflow: hidden;
+    }
+    #landing::before {
+      content: ''; position: absolute; top: -10%; left: 50%;
+      transform: translateX(-50%); width: 900px; height: 600px;
+      background: radial-gradient(ellipse, rgba(184,134,11,0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .landing-header { margin-bottom: 36px; position: relative; z-index: 1; }
+
+    .landing-content { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; }
+
+    .landing-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(32px, 6vw, 54px); font-weight: 900;
+      line-height: 1.07; letter-spacing: -0.5px; color: #1C1C1E;
+      margin-bottom: 16px;
+    }
+    .landing-title .gold { color: var(--gold); display: block; }
+
+    .landing-sub {
+      font-size: 16px; color: var(--gray-light); max-width: 450px;
+      line-height: 1.7; margin-bottom: 18px;
+    }
+
+    .benefit-list {
+      display: flex; flex-direction: column; gap: 8px;
+      margin-bottom: 32px; text-align: left;
+    }
+    .benefit-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      font-size: 14px; color: var(--gray-light);
+    }
+    .benefit-check {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: var(--gold-dim); border: 1px solid var(--gold-border);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 1px;
+    }
+    .benefit-check::after {
+      content: ''; display: block; width: 6px; height: 4px;
+      border-left: 1.5px solid var(--gold); border-bottom: 1.5px solid var(--gold);
+      transform: rotate(-45deg) translateY(-1px);
+    }
+
+    .landing-card {
+      background: var(--white); border: 1px solid rgba(184,134,11,0.18);
+      border-radius: 16px; padding: 28px 32px 32px;
+      width: 100%; max-width: 400px; box-shadow: var(--shadow);
+    }
+
+    .field-label {
+      display: block; font-size: 12px; font-weight: 600;
+      color: var(--gray); text-transform: uppercase; letter-spacing: 1px;
+      margin-bottom: 7px;
+    }
+    .field-input {
+      width: 100%; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+      background: var(--bg); color: var(--dark); font-family: 'Inter', sans-serif;
+      font-size: 15px; padding: 11px 14px; outline: none;
+      transition: border-color 0.18s;
+    }
+    .field-input:focus { border-color: var(--gold); }
+    .field-input::placeholder { color: #aaa; }
+
+    select.field-input { cursor: pointer; }
+
+    .no-signup {
+      margin-top: 14px; font-size: 12px; color: var(--gray);
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+
+    /* ===== CALCULATOR ===== */
+    #calculator {
+      min-height: 100vh; padding: 40px 24px 80px;
+      display: flex; flex-direction: column; align-items: center;
+    }
+
+    .calc-header {
+      text-align: center; margin-bottom: 36px; max-width: 600px; width: 100%;
+    }
+    .calc-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(26px, 4vw, 38px); font-weight: 900;
+      color: #1C1C1E; margin-bottom: 8px;
+    }
+    .calc-sub { font-size: 14px; color: var(--gray); }
+
+    .calc-form { width: 100%; max-width: 600px; display: flex; flex-direction: column; gap: 20px; }
+
+    .form-section {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 24px 24px 20px;
+      box-shadow: var(--shadow);
+    }
+    .section-title {
+      font-size: 12px; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--gold); margin-bottom: 18px;
+      padding-bottom: 10px; border-bottom: 1px solid var(--border);
+    }
+
+    .field-row { margin-bottom: 16px; }
+    .field-row:last-child { margin-bottom: 0; }
+
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    /* Toggle switch */
+    .toggle-group {
+      display: flex; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+      overflow: hidden; margin-bottom: 16px;
+    }
+    .toggle-opt {
+      flex: 1; padding: 10px 12px; font-size: 13px; font-weight: 600;
+      text-align: center; cursor: pointer; transition: all 0.18s;
+      color: var(--gray); background: transparent; border: none;
+      font-family: 'Inter', sans-serif;
+    }
+    .toggle-opt.active {
+      background: var(--gold); color: var(--white);
+    }
+
+    /* Yes/No toggle */
+    .yn-group { display: flex; gap: 10px; }
+    .yn-btn {
+      flex: 1; padding: 11px; font-size: 14px; font-weight: 600;
+      border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+      background: transparent; color: var(--gray); cursor: pointer;
+      font-family: 'Inter', sans-serif; transition: all 0.18s;
+    }
+    .yn-btn.active {
+      border-color: var(--gold); background: var(--gold-dim); color: var(--dark);
+    }
+
+    .service-cost-row { margin-top: 16px; display: none; }
+    .service-cost-row.visible { display: block; }
+
+    .input-prefix {
+      position: relative;
+    }
+    .input-prefix .prefix {
+      position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+      color: var(--gray); font-size: 15px; font-weight: 600; pointer-events: none;
+    }
+    .input-prefix .field-input { padding-left: 26px; }
+
+    /* ===== RESULTS ===== */
+    #results {
+      min-height: 100vh; padding: 40px 24px 80px;
+      display: flex; flex-direction: column; align-items: center;
+    }
+
+    .results-header {
+      text-align: center; margin-bottom: 36px; max-width: 700px; width: 100%;
+    }
+    .results-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(26px, 4vw, 38px); font-weight: 900;
+      color: #1C1C1E; margin-bottom: 6px;
+    }
+    .results-sub { font-size: 14px; color: var(--gray); }
+
+    .results-inner { width: 100%; max-width: 700px; }
+
+    .metric-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr);
+      gap: 14px; margin-bottom: 24px;
+    }
+    @media (max-width: 520px) { .metric-grid { grid-template-columns: 1fr; } }
+
+    .metric-card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px 22px;
+      box-shadow: var(--shadow);
+    }
+    .metric-card.highlight {
+      border-color: var(--gold); background: linear-gradient(135deg, #fffdf5 0%, var(--white) 100%);
+    }
+    .metric-label { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gray); margin-bottom: 6px; }
+    .metric-value { font-size: 26px; font-weight: 800; color: var(--dark); line-height: 1.1; }
+    .metric-value .currency { font-size: 16px; vertical-align: super; font-weight: 700; }
+    .metric-note { font-size: 11px; color: var(--gray); margin-top: 4px; }
+
+    .breakdown-card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 24px; margin-bottom: 20px;
+      box-shadow: var(--shadow);
+    }
+    .breakdown-title {
+      font-size: 12px; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--gold); margin-bottom: 16px;
+      padding-bottom: 10px; border-bottom: 1px solid var(--border);
+    }
+
+    .breakdown-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 0; border-bottom: 1px solid #f0ede4;
+      font-size: 14px;
+    }
+    .breakdown-row:last-child { border-bottom: none; }
+    .breakdown-row.total {
+      font-weight: 700; font-size: 15px; border-top: 2px solid var(--border);
+      border-bottom: none; margin-top: 4px; padding-top: 14px;
+    }
+    .breakdown-row.subtotal { color: var(--gray); font-size: 13px; }
+    .row-label { color: var(--gray-light); }
+    .row-label small { display: block; font-size: 11px; color: var(--gray); margin-top: 1px; }
+    .row-value { font-weight: 600; color: var(--dark); }
+    .row-value.total-val { color: var(--gold); font-size: 17px; }
+
+    .savings-card {
+      background: var(--green-dim); border: 1.5px solid var(--green-border);
+      border-radius: var(--radius); padding: 22px 24px; margin-bottom: 20px;
+    }
+    .savings-title {
+      font-size: 12px; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--green); margin-bottom: 8px;
+    }
+    .savings-amount { font-size: 28px; font-weight: 800; color: var(--green); margin-bottom: 4px; }
+    .savings-desc { font-size: 13px; color: #166534; line-height: 1.5; }
+
+    .per-employee-card {
+      background: var(--gold-dim); border: 1px solid var(--gold-border);
+      border-radius: var(--radius); padding: 18px 22px; margin-bottom: 20px;
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+    }
+    .per-emp-label { font-size: 13px; font-weight: 600; color: var(--gold-muted); }
+    .per-emp-value { font-size: 22px; font-weight: 800; color: var(--gold); }
+
+    .suta-note {
+      background: #fef9ec; border: 1px solid rgba(184,134,11,0.2);
+      border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 20px;
+      font-size: 12px; color: #92400e; line-height: 1.6;
+    }
+
+    .cta-card {
+      background: var(--dark); border-radius: var(--radius);
+      padding: 28px 28px; margin-bottom: 20px; text-align: center;
+    }
+    .cta-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 22px; font-weight: 700; color: var(--white); margin-bottom: 8px;
+    }
+    .cta-sub { font-size: 14px; color: #9CA3AF; margin-bottom: 20px; line-height: 1.6; }
+    .cta-contact {
+      display: flex; flex-wrap: wrap; justify-content: center; gap: 16px;
+      font-size: 13px; color: var(--gold); font-weight: 600;
+    }
+
+    .btn-outline {
+      display: inline-block; background: transparent;
+      border: 1.5px solid var(--gold); color: var(--gold);
+      font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 700;
+      border-radius: 10px; padding: 12px 24px; cursor: pointer;
+      transition: all 0.18s; margin-top: 4px;
+    }
+    .btn-outline:hover { background: var(--gold); color: var(--white); }
+
+    .action-row {
+      display: flex; flex-direction: column; gap: 10px; align-items: center;
+      margin-bottom: 28px;
+    }
+    .action-row .btn-gold { max-width: 340px; }
+    .action-row .btn-outline { max-width: 340px; width: 100%; text-align: center; }
+
+    .site-footer {
+      text-align: center; padding: 24px 16px;
+      font-size: 12px; color: var(--gray); border-top: 1px solid var(--border);
+      margin-top: 8px;
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ===== LANDING ===== -->
+  <section id="landing" class="fade-up">
+    <div class="landing-header">
+      <div class="tms-logo">
+        <span class="tms-letters">TMS</span>
+        <span class="tms-sub">Solutions Group</span>
+      </div>
+    </div>
+    <div class="landing-content">
+      <div class="pill">Free Calculator</div>
+      <h1 class="landing-title">
+        Payroll Cost
+        <span class="gold">Analyzer</span>
+      </h1>
+      <div class="divider"></div>
+      <p class="landing-sub">Uncover the true cost of your payroll — taxes, fees, and hidden burden — in under 2 minutes.</p>
+      <div class="benefit-list">
+        <div class="benefit-item"><div class="benefit-check"></div><span>See your total employer tax burden (FICA, FUTA, SUTA)</span></div>
+        <div class="benefit-item"><div class="benefit-check"></div><span>Calculate the real cost per employee including all fees</span></div>
+        <div class="benefit-item"><div class="benefit-check"></div><span>Estimate potential savings with a better payroll provider</span></div>
+      </div>
+      <div class="landing-card">
+        <div class="field-row">
+          <label class="field-label" for="bizName">Business Name <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#aaa;">(optional)</span></label>
+          <input id="bizName" class="field-input" type="text" placeholder="Your Business Name" autocomplete="organization">
+        </div>
+        <button class="btn-gold" onclick="showCalculator()">Start My Analysis</button>
+        <p class="no-signup">No sign-up required &nbsp;|&nbsp; Results shown instantly</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CALCULATOR ===== -->
+  <section id="calculator" class="hidden">
+    <div class="calc-header fade-up">
+      <div class="tms-logo" style="margin-bottom:16px;">
+        <span class="tms-letters">TMS</span>
+        <span class="tms-sub">Solutions Group</span>
+      </div>
+      <h2 class="calc-title">Tell Us About Your Payroll</h2>
+      <p class="calc-sub">Enter your details below for an accurate cost breakdown.</p>
+    </div>
+
+    <div class="calc-form fade-up">
+
+      <!-- Section 1: Workforce -->
+      <div class="form-section">
+        <div class="section-title">Workforce Details</div>
+
+        <div class="field-row">
+          <label class="field-label" for="numEmployees">Number of Employees</label>
+          <input id="numEmployees" class="field-input" type="number" min="1" placeholder="e.g. 12">
+        </div>
+
+        <div class="field-row">
+          <label class="field-label">Pay Rate Type</label>
+          <div class="toggle-group">
+            <button class="toggle-opt active" id="toggleHourly" onclick="setPayType('hourly')">Hourly Wage</button>
+            <button class="toggle-opt" id="toggleSalary" onclick="setPayType('salary')">Annual Salary</button>
+          </div>
+        </div>
+
+        <div class="field-row" id="hourlyRow">
+          <label class="field-label" for="hourlyWage">Average Hourly Wage</label>
+          <div class="input-prefix">
+            <span class="prefix">$</span>
+            <input id="hourlyWage" class="field-input" type="number" min="0" step="0.01" placeholder="e.g. 18.50">
+          </div>
+          <div style="font-size:11px;color:var(--gray);margin-top:5px;">Calculated at 40 hrs/week, 52 weeks/year</div>
+        </div>
+
+        <div class="field-row hidden" id="salaryRow">
+          <label class="field-label" for="annualSalary">Average Annual Salary per Employee</label>
+          <div class="input-prefix">
+            <span class="prefix">$</span>
+            <input id="annualSalary" class="field-input" type="number" min="0" placeholder="e.g. 45000">
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: Pay Schedule -->
+      <div class="form-section">
+        <div class="section-title">Pay Schedule</div>
+        <div class="field-row">
+          <label class="field-label" for="payFreq">Pay Frequency</label>
+          <select id="payFreq" class="field-input">
+            <option value="">Select frequency...</option>
+            <option value="52">Weekly (52 per year)</option>
+            <option value="26">Bi-Weekly (26 per year)</option>
+            <option value="24">Semi-Monthly (24 per year)</option>
+            <option value="12">Monthly (12 per year)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Section 3: State -->
+      <div class="form-section">
+        <div class="section-title">Business Location</div>
+        <div class="field-row">
+          <label class="field-label" for="stateSelect">State</label>
+          <select id="stateSelect" class="field-input">
+            <option value="">Select state...</option>
+            <option>Alabama</option><option>Alaska</option><option>Arizona</option>
+            <option>Arkansas</option><option>California</option><option>Colorado</option>
+            <option>Connecticut</option><option>Delaware</option><option>Florida</option>
+            <option>Georgia</option><option>Hawaii</option><option>Idaho</option>
+            <option>Illinois</option><option>Indiana</option><option>Iowa</option>
+            <option>Kansas</option><option>Kentucky</option><option>Louisiana</option>
+            <option>Maine</option><option>Maryland</option><option>Massachusetts</option>
+            <option>Michigan</option><option>Minnesota</option><option>Mississippi</option>
+            <option>Missouri</option><option>Montana</option><option>Nebraska</option>
+            <option>Nevada</option><option>New Hampshire</option><option>New Jersey</option>
+            <option>New Mexico</option><option>New York</option><option>North Carolina</option>
+            <option>North Dakota</option><option>Ohio</option><option>Oklahoma</option>
+            <option>Oregon</option><option>Pennsylvania</option><option>Rhode Island</option>
+            <option>South Carolina</option><option>South Dakota</option><option>Tennessee</option>
+            <option>Texas</option><option>Utah</option><option>Vermont</option>
+            <option>Virginia</option><option>Washington</option><option>West Virginia</option>
+            <option>Wisconsin</option><option>Wyoming</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Section 4: Payroll Service -->
+      <div class="form-section">
+        <div class="section-title">Current Payroll Service</div>
+        <div class="field-row">
+          <label class="field-label">Do you currently use a payroll service?</label>
+          <div class="yn-group">
+            <button class="yn-btn" id="ynYes" onclick="setService(true)">Yes</button>
+            <button class="yn-btn" id="ynNo" onclick="setService(false)">No</button>
+          </div>
+        </div>
+        <div class="service-cost-row" id="serviceCostRow">
+          <label class="field-label" for="monthlyCost">Current Monthly Payroll Service Cost</label>
+          <div class="input-prefix">
+            <span class="prefix">$</span>
+            <input id="monthlyCost" class="field-input" type="number" min="0" placeholder="e.g. 250">
+          </div>
+        </div>
+      </div>
+
+      <div id="calcError" style="color:#B91C1C;font-size:13px;background:#fff0f0;border:1px solid #fca5a5;border-radius:8px;padding:12px 16px;display:none;"></div>
+
+      <button class="btn-gold" onclick="calculate()">Calculate My Payroll Costs</button>
+    </div>
+  </section>
+
+  <!-- ===== RESULTS ===== -->
+  <section id="results" class="hidden">
+    <div class="results-header fade-up">
+      <div class="tms-logo" style="margin-bottom:16px;">
+        <span class="tms-letters">TMS</span>
+        <span class="tms-sub">Solutions Group</span>
+      </div>
+      <h2 class="results-title">Your Payroll Cost Analysis</h2>
+      <p class="results-sub" id="resultsSubtitle">Based on your inputs — here is your true payroll cost breakdown.</p>
+    </div>
+
+    <div class="results-inner fade-up">
+
+      <!-- Metric cards -->
+      <div class="metric-grid">
+        <div class="metric-card">
+          <div class="metric-label">Total Annual Gross Payroll</div>
+          <div class="metric-value"><span class="currency">$</span><span id="r-gross"></span></div>
+          <div class="metric-note" id="r-gross-note"></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Total Employer Tax Burden</div>
+          <div class="metric-value"><span class="currency">$</span><span id="r-taxes"></span></div>
+          <div class="metric-note" id="r-taxes-pct"></div>
+        </div>
+        <div class="metric-card" id="r-service-card">
+          <div class="metric-label">Annual Payroll Service Cost</div>
+          <div class="metric-value"><span class="currency">$</span><span id="r-service"></span></div>
+          <div class="metric-note" id="r-service-note"></div>
+        </div>
+        <div class="metric-card highlight">
+          <div class="metric-label">Total True Payroll Cost</div>
+          <div class="metric-value"><span class="currency">$</span><span id="r-total"></span></div>
+          <div class="metric-note">Gross + taxes + service fees</div>
+        </div>
+      </div>
+
+      <!-- Per employee -->
+      <div class="per-employee-card">
+        <div class="per-emp-label">True Cost Per Employee Per Year</div>
+        <div class="per-emp-value">$<span id="r-per-emp"></span></div>
+      </div>
+
+      <!-- Breakdown table -->
+      <div class="breakdown-card">
+        <div class="breakdown-title">Full Cost Breakdown</div>
+
+        <div class="breakdown-row">
+          <div class="row-label">Annual Gross Payroll<small id="r-bd-gross-note"></small></div>
+          <div class="row-value">$<span id="r-bd-gross"></span></div>
+        </div>
+
+        <div class="breakdown-row subtotal">
+          <div class="row-label">Employer FICA (7.65%)<small>Social Security 6.2% + Medicare 1.45%</small></div>
+          <div class="row-value">$<span id="r-fica"></span></div>
+        </div>
+
+        <div class="breakdown-row subtotal">
+          <div class="row-label">FUTA (0.6% on first $7,000/employee)<small>Federal Unemployment Tax Act</small></div>
+          <div class="row-value">$<span id="r-futa"></span></div>
+        </div>
+
+        <div class="breakdown-row subtotal">
+          <div class="row-label">SUTA (est. 2.7% on first $7,000/employee)<small>State Unemployment — see note below</small></div>
+          <div class="row-value">$<span id="r-suta"></span></div>
+        </div>
+
+        <div class="breakdown-row">
+          <div class="row-label" style="font-weight:600;">Total Employer Tax Burden</div>
+          <div class="row-value" style="font-weight:700;">$<span id="r-bd-taxes"></span></div>
+        </div>
+
+        <div class="breakdown-row" id="r-service-line" style="display:none;">
+          <div class="row-label">Annual Payroll Service Cost</div>
+          <div class="row-value">$<span id="r-bd-service"></span></div>
+        </div>
+
+        <div class="breakdown-row total">
+          <div class="row-label">Total True Payroll Cost</div>
+          <div class="row-value total-val">$<span id="r-bd-total"></span></div>
+        </div>
+      </div>
+
+      <!-- SUTA note -->
+      <div class="suta-note">
+        <strong>Note on SUTA Rates:</strong> State Unemployment Tax (SUTA) rates and taxable wage bases vary significantly by state and employer claims history. This estimate uses 2.7% on the first $7,000 per employee as a general approximation. Your actual SUTA obligation may be higher or lower. Consult your state's labor department or a payroll professional for your specific rate.
+      </div>
+
+      <!-- Savings -->
+      <div id="savings-section" class="savings-card" style="display:none;">
+        <div class="savings-title">Potential Annual Savings</div>
+        <div class="savings-amount">$<span id="r-savings"></span></div>
+        <div class="savings-desc" id="r-savings-desc"></div>
+      </div>
+
+      <!-- Actions -->
+      <div class="action-row">
+        <button class="btn-gold" onclick="generatePDF()">Download PDF Report</button>
+        <button class="btn-outline" onclick="showCalculator()">Recalculate</button>
+      </div>
+
+      <!-- CTA -->
+      <div class="cta-card">
+        <div class="cta-title">Ready to Reduce Your Payroll Costs?</div>
+        <div class="cta-sub">TMS Solutions Group helps small businesses streamline payroll, reduce tax exposure, and cut unnecessary service fees. Let's talk about your numbers.</div>
+        <div class="cta-contact">
+          <span>tom@tms-solutions-group.com</span>
+          <span>tms-solutions-group.com</span>
+          <span>386-387-8620</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="site-footer">
+      tom@tms-solutions-group.com &nbsp;|&nbsp; tms-solutions-group.com &nbsp;|&nbsp; 386-387-8620<br>
+      <span style="color:#bbb;">TMS Solutions Group &copy; 2025</span>
+    </div>
+  </section>
+
+</div><!-- #app -->
+
+<script>
+  // ===== STATE =====
+  let payType = 'hourly';
+  let usesService = null;
+  let calcResults = {};
+
+  // ===== NAVIGATION =====
+  function showCalculator() {
+    document.getElementById('landing').classList.add('hidden');
+    document.getElementById('results').classList.add('hidden');
+    document.getElementById('calculator').classList.remove('hidden');
+    window.scrollTo(0, 0);
+  }
+
+  function showResults() {
+    document.getElementById('calculator').classList.add('hidden');
+    document.getElementById('landing').classList.add('hidden');
+    document.getElementById('results').classList.remove('hidden');
+    window.scrollTo(0, 0);
+  }
+
+  // ===== PAY TYPE TOGGLE =====
+  function setPayType(type) {
+    payType = type;
+    document.getElementById('toggleHourly').classList.toggle('active', type === 'hourly');
+    document.getElementById('toggleSalary').classList.toggle('active', type === 'salary');
+    document.getElementById('hourlyRow').classList.toggle('hidden', type !== 'hourly');
+    document.getElementById('salaryRow').classList.toggle('hidden', type !== 'salary');
+  }
+
+  // ===== SERVICE TOGGLE =====
+  function setService(val) {
+    usesService = val;
+    document.getElementById('ynYes').classList.toggle('active', val === true);
+    document.getElementById('ynNo').classList.toggle('active', val === false);
+    document.getElementById('serviceCostRow').classList.toggle('visible', val === true);
+    if (!val) document.getElementById('monthlyCost').value = '';
+  }
+
+  // ===== FORMAT =====
+  function fmt(n) {
+    return n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  }
+
+  function fmtDec(n) {
+    return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  // ===== BENCHMARK MONTHLY SERVICE COST =====
+  function getBenchmark(n) {
+    if (n <= 10)  return 65;
+    if (n <= 25)  return 150;
+    if (n <= 50)  return 275;
+    if (n <= 100) return 450;
+    return 700;
+  }
+
+  // ===== CALCULATE =====
+  function calculate() {
+    const errEl = document.getElementById('calcError');
+    errEl.style.display = 'none';
+
+    const n = parseInt(document.getElementById('numEmployees').value);
+    const freq = document.getElementById('payFreq').value;
+    const state = document.getElementById('stateSelect').value;
+
+    if (!n || n < 1) { errEl.textContent = 'Please enter a valid number of employees.'; errEl.style.display = 'block'; return; }
+    if (!freq)       { errEl.textContent = 'Please select a pay frequency.'; errEl.style.display = 'block'; return; }
+    if (!state)      { errEl.textContent = 'Please select your state.'; errEl.style.display = 'block'; return; }
+    if (usesService === null) { errEl.textContent = 'Please indicate whether you use a payroll service.'; errEl.style.display = 'block'; return; }
+
+    let avgAnnualSalary;
+    if (payType === 'hourly') {
+      const hw = parseFloat(document.getElementById('hourlyWage').value);
+      if (!hw || hw <= 0) { errEl.textContent = 'Please enter a valid hourly wage.'; errEl.style.display = 'block'; return; }
+      avgAnnualSalary = hw * 40 * 52;
+    } else {
+      const sal = parseFloat(document.getElementById('annualSalary').value);
+      if (!sal || sal <= 0) { errEl.textContent = 'Please enter a valid annual salary.'; errEl.style.display = 'block'; return; }
+      avgAnnualSalary = sal;
+    }
+
+    let monthlySvcCost = 0;
+    if (usesService) {
+      monthlySvcCost = parseFloat(document.getElementById('monthlyCost').value);
+      if (!monthlySvcCost || monthlySvcCost < 0) { errEl.textContent = 'Please enter your current monthly payroll service cost.'; errEl.style.display = 'block'; return; }
+    }
+
+    // Gross payroll
+    const grossPayroll = avgAnnualSalary * n;
+
+    // FICA employer share: 7.65% of gross
+    const fica = grossPayroll * 0.0765;
+
+    // FUTA: 0.6% on first $7,000 per employee
+    const futaWageBase = Math.min(avgAnnualSalary, 7000);
+    const futa = futaWageBase * 0.006 * n;
+
+    // SUTA: estimated 2.7% on first $7,000 per employee
+    const sutaWageBase = Math.min(avgAnnualSalary, 7000);
+    const suta = sutaWageBase * 0.027 * n;
+
+    const totalTaxes = fica + futa + suta;
+    const annualSvcCost = monthlySvcCost * 12;
+    const totalCost = grossPayroll + totalTaxes + annualSvcCost;
+    const costPerEmp = totalCost / n;
+    const taxPct = (totalTaxes / grossPayroll * 100).toFixed(1);
+
+    // Savings
+    let savingsAmount = 0;
+    let savingsDesc = '';
+    if (usesService && annualSvcCost > 0) {
+      const benchmark = getBenchmark(n);
+      const annualBenchmark = benchmark * 12;
+      if (annualSvcCost > annualBenchmark * 1.1) {
+        savingsAmount = annualSvcCost - annualBenchmark;
+        savingsDesc = 'A streamlined payroll provider for ' + n + ' employees typically costs approximately $' + fmt(benchmark) + '/month ($' + fmt(annualBenchmark) + '/year). Based on your current spend, you could save an estimated $' + fmt(savingsAmount) + ' per year by switching to a more cost-effective solution.';
+      } else {
+        savingsAmount = Math.round(annualSvcCost * 0.15);
+        savingsDesc = 'Even at a competitive rate, there may be opportunities to reduce service costs through provider negotiation or plan restructuring. A 15% reduction would save approximately $' + fmt(savingsAmount) + ' per year.';
+      }
+    }
+
+    calcResults = {
+      bizName: document.getElementById('bizName').value.trim() || '',
+      state,
+      n,
+      avgAnnualSalary,
+      freq: parseInt(freq),
+      payType,
+      grossPayroll,
+      fica,
+      futa,
+      suta,
+      totalTaxes,
+      annualSvcCost,
+      totalCost,
+      costPerEmp,
+      taxPct,
+      usesService,
+      monthlySvcCost,
+      savingsAmount,
+      savingsDesc
+    };
+
+    renderResults(calcResults);
+    showResults();
+  }
+
+  // ===== RENDER RESULTS =====
+  function renderResults(r) {
+    const freqLabel = { 52: 'Weekly', 26: 'Bi-Weekly', 24: 'Semi-Monthly', 12: 'Monthly' }[r.freq] || '';
+    const payPeriodGross = r.grossPayroll / r.freq;
+
+    document.getElementById('resultsSubtitle').textContent =
+      (r.bizName ? r.bizName + ' — ' : '') + r.n + ' employees | ' + r.state + ' | ' + freqLabel + ' payroll';
+
+    document.getElementById('r-gross').textContent = fmt(r.grossPayroll);
+    document.getElementById('r-gross-note').textContent = fmt(r.n) + ' employees | $' + fmtDec(r.avgAnnualSalary) + '/yr avg';
+    document.getElementById('r-taxes').textContent = fmt(r.totalTaxes);
+    document.getElementById('r-taxes-pct').textContent = r.taxPct + '% of gross payroll';
+
+    if (r.usesService) {
+      document.getElementById('r-service-card').style.display = '';
+      document.getElementById('r-service').textContent = fmt(r.annualSvcCost);
+      document.getElementById('r-service-note').textContent = '$' + fmt(r.monthlySvcCost) + '/month x 12';
+      document.getElementById('r-service-line').style.display = '';
+      document.getElementById('r-bd-service').textContent = fmt(r.annualSvcCost);
+    } else {
+      document.getElementById('r-service-card').style.display = 'none';
+      document.getElementById('r-service-line').style.display = 'none';
+    }
+
+    document.getElementById('r-total').textContent = fmt(r.totalCost);
+    document.getElementById('r-per-emp').textContent = fmt(r.costPerEmp);
+
+    document.getElementById('r-bd-gross').textContent = fmt(r.grossPayroll);
+    document.getElementById('r-bd-gross-note').textContent = payPeriodGross > 0
+      ? '$' + fmt(payPeriodGross) + ' per ' + freqLabel.toLowerCase() + ' pay period'
+      : '';
+    document.getElementById('r-fica').textContent = fmt(r.fica);
+    document.getElementById('r-futa').textContent = fmt(r.futa);
+    document.getElementById('r-suta').textContent = fmt(r.suta);
+    document.getElementById('r-bd-taxes').textContent = fmt(r.totalTaxes);
+    document.getElementById('r-bd-total').textContent = fmt(r.totalCost);
+
+    if (r.usesService && r.savingsAmount > 0) {
+      document.getElementById('savings-section').style.display = '';
+      document.getElementById('r-savings').textContent = fmt(r.savingsAmount);
+      document.getElementById('r-savings-desc').textContent = r.savingsDesc;
+    } else {
+      document.getElementById('savings-section').style.display = 'none';
+    }
+  }
+
+  // ===== PDF GENERATION =====
+  function pdfSafe(str) {
+    if (str == null) return '';
+    return String(str)
+      .replace(/\u2013/g, '-')
+      .replace(/\u2014/g, '-')
+      .replace(/\u00B7/g, '|')
+      .replace(/\u2019/g, "'")
+      .replace(/\u2018/g, "'")
+      .replace(/\u201C/g, '"')
+      .replace(/\u201D/g, '"')
+      .replace(/[^\x00-\x7F]/g, '');
+  }
+
+  function generatePDF() {
+    try {
+      const r = calcResults;
+      if (!r || !r.grossPayroll) { alert('No results to export. Please run the calculator first.'); return; }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'letter' });
+
+      const W = 612, H = 792;
+      const cream  = [250, 250, 247];
+      const gold   = [184, 134, 11];
+      const dark   = [28, 28, 30];
+      const gray   = [107, 114, 128];
+      const white  = [255, 255, 255];
+      const green  = [21, 128, 61];
+      const lgray  = [75, 85, 99];
+      const border = [232, 229, 220];
+
+      const freqLabel = { 52: 'Weekly', 26: 'Bi-Weekly', 24: 'Semi-Monthly', 12: 'Monthly' }[r.freq] || '';
+
+      // =========================================================
+      // PAGE 1 — COVER / SUMMARY
+      // =========================================================
+      doc.setFillColor(...cream);
+      doc.rect(0, 0, W, H, 'F');
+
+      // Gold top bar
+      doc.setFillColor(...gold);
+      doc.rect(0, 0, W, 6, 'F');
+
+      // TMS header
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(13);
+      doc.setTextColor(...gold);
+      doc.text('TMS', W / 2, 36, { align: 'center' });
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(...gray);
+      doc.text('SOLUTIONS GROUP', W / 2, 48, { align: 'center' });
+
+      // Divider line
+      doc.setDrawColor(...border);
+      doc.setLineWidth(0.75);
+      doc.line(60, 58, W - 60, 58);
+
+      // Tool title
+      doc.setFont('times', 'bold');
+      doc.setFontSize(28);
+      doc.setTextColor(...dark);
+      doc.text('Payroll Cost Analyzer', W / 2, 98, { align: 'center' });
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(11);
+      doc.setTextColor(...gray);
+      doc.text('Employer Cost Breakdown & Tax Burden Report', W / 2, 118, { align: 'center' });
+
+      // Gold divider
+      doc.setDrawColor(...gold);
+      doc.setLineWidth(1.5);
+      doc.line(W / 2 - 36, 130, W / 2 + 36, 130);
+
+      // Business name & date row
+      let infoY = 154;
+      if (r.bizName) {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(14);
+        doc.setTextColor(...dark);
+        doc.text(pdfSafe(r.bizName), W / 2, infoY, { align: 'center' });
+        infoY += 18;
+      }
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(...gray);
+      doc.text(pdfSafe(r.state + '  |  ' + r.n + ' Employees  |  ' + freqLabel + ' Pay  |  ' + new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })), W / 2, infoY, { align: 'center' });
+
+      // Summary box
+      const boxY = infoY + 24;
+      const boxH = r.usesService ? 220 : 200;
+      doc.setFillColor(...white);
+      doc.setDrawColor(...gold);
+      doc.setLineWidth(1);
+      doc.roundedRect(48, boxY, W - 96, boxH, 8, 8, 'FD');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(...gold);
+      doc.text('PAYROLL COST SUMMARY', W / 2, boxY + 20, { align: 'center' });
+
+      // 2x2 metric grid inside box
+      const col1 = 48 + (W - 96) * 0.25;
+      const col2 = 48 + (W - 96) * 0.75;
+      const row1 = boxY + 52;
+      const row2 = boxY + (r.usesService ? 132 : 122);
+
+      const metrics = [
+        { label: 'Annual Gross Payroll', value: '$' + fmt(r.grossPayroll) },
+        { label: 'Total Employer Taxes', value: '$' + fmt(r.totalTaxes) }
+      ];
+      const metrics2 = r.usesService
+        ? [
+            { label: 'Annual Service Cost', value: '$' + fmt(r.annualSvcCost) },
+            { label: 'Total True Cost', value: '$' + fmt(r.totalCost), highlight: true }
+          ]
+        : [
+            { label: 'Cost Per Employee', value: '$' + fmt(r.costPerEmp) },
+            { label: 'Total True Cost', value: '$' + fmt(r.totalCost), highlight: true }
+          ];
+
+      [[col1, row1, metrics[0]], [col2, row1, metrics[1]], [col1, row2, metrics2[0]], [col2, row2, metrics2[1]]].forEach(([cx, cy, m]) => {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(...gray);
+        doc.text(pdfSafe(m.label), cx, cy - 12, { align: 'center' });
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(18);
+        doc.setTextColor(...(m.highlight ? gold : dark));
+        doc.text(pdfSafe(m.value), cx, cy + 8, { align: 'center' });
+      });
+
+      // Horizontal separator inside box
+      doc.setDrawColor(...border);
+      doc.setLineWidth(0.5);
+      doc.line(80, row1 + 24, W - 80, row1 + 24);
+
+      // Tax rate note
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(...gray);
+      doc.text(pdfSafe('Employer tax burden: ' + r.taxPct + '% of gross payroll'), W / 2, boxY + boxH - 14, { align: 'center' });
+
+      // Savings callout (if applicable)
+      let nextY = boxY + boxH + 22;
+      if (r.usesService && r.savingsAmount > 0) {
+        doc.setFillColor(21, 128, 61, 0.08);
+        doc.setFillColor(240, 253, 244);
+        doc.setDrawColor(134, 239, 172);
+        doc.setLineWidth(0.75);
+        doc.roundedRect(48, nextY, W - 96, 56, 6, 6, 'FD');
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.setTextColor(...green);
+        doc.text('POTENTIAL ANNUAL SAVINGS', 64, nextY + 16);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(20);
+        doc.setTextColor(...green);
+        doc.text(pdfSafe('$' + fmt(r.savingsAmount)), 64, nextY + 38);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(22, 101, 52);
+        const savNote = doc.splitTextToSize(pdfSafe('By switching to a more cost-effective payroll provider for ' + r.n + ' employees.'), W - 200);
+        doc.text(savNote, 200, nextY + 28);
+
+        nextY += 70;
+      }
+
+      // What's included note
+      doc.setFillColor(248, 246, 240);
+      doc.setDrawColor(...border);
+      doc.setLineWidth(0.5);
+      doc.roundedRect(48, nextY, W - 96, 62, 6, 6, 'FD');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.setTextColor(...dark);
+      doc.text('What is included in this analysis:', 64, nextY + 16);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(...lgray);
+      const bullets = [
+        'Gross payroll (' + r.n + ' employees at $' + fmtDec(r.avgAnnualSalary) + '/yr avg)',
+        'Employer FICA 7.65% | FUTA 0.6% on first $7,000 | SUTA est. 2.7% on first $7,000',
+        r.usesService ? 'Payroll service fees ($' + fmt(r.monthlySvcCost) + '/month)' : 'No payroll service cost included'
+      ];
+      bullets.forEach((b, i) => {
+        doc.text(pdfSafe('- ' + b), 68, nextY + 30 + i * 12);
+      });
+
+      // Footer
+      doc.setDrawColor(...border);
+      doc.setLineWidth(0.5);
+      doc.line(48, H - 46, W - 48, H - 46);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(...gray);
+      doc.text('tom@tms-solutions-group.com  |  tms-solutions-group.com  |  386-387-8620', W / 2, H - 30, { align: 'center' });
+      doc.text('Page 1 of 2', W / 2, H - 16, { align: 'center' });
+
+      // =========================================================
+      // PAGE 2 — DETAILED BREAKDOWN
+      // =========================================================
+      doc.addPage();
+      doc.setFillColor(...cream);
+      doc.rect(0, 0, W, H, 'F');
+
+      doc.setFillColor(...gold);
+      doc.rect(0, 0, W, 6, 'F');
+
+      // Header
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(...gold);
+      doc.text('TMS SOLUTIONS GROUP', 48, 36);
+
+      doc.setFont('times', 'bold');
+      doc.setFontSize(18);
+      doc.setTextColor(...dark);
+      doc.text('Detailed Cost Breakdown', 48, 56);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(...gray);
+      doc.text(pdfSafe((r.bizName ? r.bizName + '  |  ' : '') + r.state + '  |  ' + r.n + ' Employees'), 48, 70);
+
+      doc.setDrawColor(...border);
+      doc.setLineWidth(0.75);
+      doc.line(48, 80, W - 48, 80);
+
+      // Table header
+      const tY = 100;
+      doc.setFillColor(245, 243, 234);
+      doc.rect(48, tY - 14, W - 96, 20, 'F');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(...gray);
+      doc.text('COST COMPONENT', 58, tY - 1);
+      doc.text('RATE / BASIS', 330, tY - 1);
+      doc.text('ANNUAL AMOUNT', W - 58, tY - 1, { align: 'right' });
+
+      // Table rows
+      const rows = [
+        { label: 'Annual Gross Payroll', sub: r.n + ' employees x $' + fmtDec(r.avgAnnualSalary) + ' avg salary', rate: '', amount: '$' + fmt(r.grossPayroll), bold: false },
+        { label: 'Employer FICA', sub: 'Social Security 6.2% + Medicare 1.45%', rate: '7.65% of gross', amount: '$' + fmt(r.fica), bold: false },
+        { label: 'FUTA', sub: 'Federal Unemployment Tax Act', rate: '0.6% x $7,000 x ' + r.n + ' emp', amount: '$' + fmt(r.futa), bold: false },
+        { label: 'SUTA (Estimated)', sub: 'State Unemployment - see disclaimer', rate: '2.7% x $7,000 x ' + r.n + ' emp', amount: '$' + fmt(r.suta), bold: false },
+        { label: 'Total Employer Tax Burden', sub: r.taxPct + '% of gross payroll', rate: '', amount: '$' + fmt(r.totalTaxes), bold: true, separator: true },
+      ];
+
+      if (r.usesService) {
+        rows.push({ label: 'Annual Payroll Service Cost', sub: '$' + fmt(r.monthlySvcCost) + '/month x 12', rate: '', amount: '$' + fmt(r.annualSvcCost), bold: false });
+      }
+
+      rows.push({ label: 'TOTAL TRUE PAYROLL COST', sub: 'Gross + Taxes' + (r.usesService ? ' + Service Fees' : ''), rate: '', amount: '$' + fmt(r.totalCost), bold: true, highlight: true });
+
+      let rowY = tY + 16;
+      rows.forEach((row, i) => {
+        const rowH2 = row.sub ? 28 : 20;
+        if (row.separator) {
+          doc.setDrawColor(...border);
+          doc.setLineWidth(0.5);
+          doc.line(48, rowY - 2, W - 48, rowY - 2);
+        }
+        if (row.highlight) {
+          doc.setFillColor(255, 250, 235);
+          doc.rect(48, rowY - 10, W - 96, rowH2 + 4, 'F');
+          doc.setDrawColor(...gold);
+          doc.setLineWidth(0.5);
+          doc.line(48, rowY - 10, W - 48, rowY - 10);
+          doc.line(48, rowY - 10 + rowH2 + 4, W - 48, rowY - 10 + rowH2 + 4);
+        }
+
+        doc.setFont('helvetica', row.bold ? 'bold' : 'normal');
+        doc.setFontSize(row.highlight ? 10 : 9.5);
+        doc.setTextColor(...(row.highlight ? gold : dark));
+        doc.text(pdfSafe(row.label), 58, rowY + 4);
+
+        if (row.sub) {
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8);
+          doc.setTextColor(...gray);
+          doc.text(pdfSafe(row.sub), 58, rowY + 16);
+        }
+
+        if (row.rate) {
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8.5);
+          doc.setTextColor(...lgray);
+          doc.text(pdfSafe(row.rate), 330, rowY + 4);
+        }
+
+        doc.setFont('helvetica', row.bold ? 'bold' : 'normal');
+        doc.setFontSize(row.highlight ? 11 : 9.5);
+        doc.setTextColor(...(row.highlight ? gold : dark));
+        doc.text(pdfSafe(row.amount), W - 58, rowY + 4, { align: 'right' });
+
+        rowY += rowH2 + 8;
+
+        if (!row.highlight && !row.separator) {
+          doc.setDrawColor(240, 237, 228);
+          doc.setLineWidth(0.3);
+          doc.line(48, rowY - 6, W - 48, rowY - 6);
+        }
+      });
+
+      // Per-employee highlight
+      rowY += 8;
+      doc.setFillColor(255, 251, 235);
+      doc.setDrawColor(...gold);
+      doc.setLineWidth(0.75);
+      doc.roundedRect(48, rowY, W - 96, 36, 6, 6, 'FD');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(...gold);
+      doc.text('TRUE COST PER EMPLOYEE PER YEAR', 64, rowY + 14);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.setTextColor(...gold);
+      doc.text(pdfSafe('$' + fmt(r.costPerEmp)), W - 64, rowY + 22, { align: 'right' });
+
+      rowY += 50;
+
+      // Pay period breakdown
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(...gray);
+      doc.text(pdfSafe('Per-period breakdown (' + freqLabel + ' - ' + r.freq + ' pay periods/year):'), 48, rowY);
+      rowY += 14;
+
+      const periodGross = r.grossPayroll / r.freq;
+      const periodTaxes = r.totalTaxes / r.freq;
+      const periodSvc = r.annualSvcCost / r.freq;
+      const periodTotal = r.totalCost / r.freq;
+
+      const periodItems = [
+        ['Gross payroll per period', '$' + fmt(periodGross)],
+        ['Employer taxes per period', '$' + fmt(periodTaxes)],
+        ...(r.usesService ? [['Service cost per period', '$' + fmt(periodSvc)]] : []),
+        ['Total cost per period', '$' + fmt(periodTotal)]
+      ];
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      periodItems.forEach(([label, val], i) => {
+        const isLast = i === periodItems.length - 1;
+        doc.setTextColor(...(isLast ? gold : lgray));
+        doc.setFont('helvetica', isLast ? 'bold' : 'normal');
+        doc.text(pdfSafe(label), 58, rowY + i * 13);
+        doc.text(pdfSafe(val), W - 58, rowY + i * 13, { align: 'right' });
+      });
+
+      rowY += periodItems.length * 13 + 18;
+
+      // SUTA note box
+      doc.setFillColor(254, 249, 236);
+      doc.setDrawColor(245, 200, 80);
+      doc.setLineWidth(0.75);
+      const sutaBoxH = 52;
+      doc.roundedRect(48, rowY, W - 96, sutaBoxH, 6, 6, 'FD');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(146, 64, 14);
+      doc.text('!! NOTE ON SUTA RATES', 62, rowY + 14);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(146, 64, 14);
+      const sutaTxt = doc.splitTextToSize(pdfSafe('State Unemployment Tax (SUTA) rates and taxable wage bases vary significantly by state and employer claims history. This estimate uses 2.7% on the first $7,000 per employee as a general approximation. Your actual SUTA rate may be higher or lower. Consult your state labor department or a payroll professional.'), W - 120);
+      doc.text(sutaTxt, 62, rowY + 26);
+
+      rowY += sutaBoxH + 18;
+
+      // Disclaimer
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(7.5);
+      doc.setTextColor(...gray);
+      const disclaimer = doc.splitTextToSize(pdfSafe('DISCLAIMER: This report is provided for general informational and illustrative purposes only and does not constitute professional tax, legal, or payroll advice. Tax rates, wage bases, and regulations are subject to change. Actual employer costs will vary based on individual circumstances, state-specific rules, claims history, and applicable exemptions. Consult a licensed payroll professional or CPA before making financial decisions based on this analysis.'), W - 96);
+      doc.text(disclaimer, 48, rowY);
+
+      // Footer
+      doc.setDrawColor(...border);
+      doc.setLineWidth(0.5);
+      doc.line(48, H - 46, W - 48, H - 46);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(...gray);
+      doc.text('tom@tms-solutions-group.com  |  tms-solutions-group.com  |  386-387-8620', W / 2, H - 30, { align: 'center' });
+      doc.text('Page 2 of 2', W / 2, H - 16, { align: 'center' });
+
+      // Save
+      const bizSlug = r.bizName ? '-' + r.bizName.replace(/[^a-zA-Z0-9]/g, '') : '';
+      doc.save('TMS-Payroll-Cost-Analyzer' + bizSlug + '.pdf');
+
+    } catch (err) {
+      console.error('PDF generation error:', err);
+      alert('PDF generation failed: ' + err.message);
+    }
+  }
+</script>
+</body>
+</html>
